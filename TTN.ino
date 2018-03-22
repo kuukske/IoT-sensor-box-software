@@ -16,10 +16,15 @@ const char *appSKey = "F2F66085A51D09A5A86E74A9AF9B8D68";
 const int buttonPin = 8;
 const int NTCpin = A0;
 
+const int redPin = 13;
+const int greenPin = 11;
+
 //--Global variables
 int buttonState = 0;
 long previousMillis = 0;  //previous value of the millis function
 long sendInterval = 10;   //interval of ttn transmission, in seconds
+int ledMode = 0;
+int ledSecondCount = 0;
 
 DHT dht(DHTPIN, DHTTYPE);
 TheThingsNetwork ttn(loraSerial, debugSerial, freqPlan);
@@ -40,6 +45,9 @@ void setup()
   //--PinMode setup
   pinMode(buttonPin, INPUT);
   pinMode(NTCpin, INPUT);
+
+  pinMode(redPin, OUTPUT);
+  pinMode(greenPin, OUTPUT);
 }
 
 void loop()
@@ -63,7 +71,29 @@ void loop()
   if(currentMillis - previousMillis > sendInterval *1000)
   {
     previousMillis = currentMillis;
-    sendPayload(temperature, humidity, buttonState, NTC);    //--generate and send payload
+    sendPayload(temperature, humidity, buttonState, NTC, ledMode);    //--generate and send payload
+    ledSecondCount++;
+
+    if(ledSecondCount >= 2)
+    {
+      ledSecondCount = 0;
+      switch(ledMode){
+        case 1:
+          redLed();
+          ledMode++;
+        break;
+
+        case 2:
+          orangeLed();
+          ledMode++;
+        break;
+
+        case 3:
+          greenLed();
+          ledMode = 1;
+        break;
+      }
+    }
   }
 
   //--Print values to serial monitor, only for debugging
@@ -71,16 +101,17 @@ void loop()
 
 }
 
-void sendPayload(uint16_t temp, uint16_t hum, int button, uint16_t NTC)
+void sendPayload(uint16_t temp, uint16_t hum, int button, uint16_t NTC, int ledMode)
 {
-    byte payload[7];
+    byte payload[8];
     payload[0] = highByte(temp);
     payload[1] = lowByte(temp);
     payload[2] = highByte(hum);
     payload[3] = lowByte(hum);
     payload[4] = lowByte(button);
-    payload[5] = lowByte(NTC);
-    payload[6] = highByte(NTC);
+    payload[5] = highByte(NTC);
+    payload[6] = lowByte(NTC);
+    payload[7] = lowByte(ledMode);
 
     ttn.sendBytes(payload, sizeof(payload));
 }
@@ -115,4 +146,32 @@ double Thermistor(int RawADC) {
   Temp = Temp - 275.15;            // Convert Kelvin to Celcius
    //Temp = (Temp * 9.0)/ 5.0 + 32.0; // Convert Celcius to Fahrenheit
    return Temp *100;
+}
+
+void redLed()
+{
+  digitalWrite(redPin,HIGH);
+  digitalWrite(greenPin, LOW);
+  ledMode = 1;
+}
+
+void orangeLed()
+{
+  digitalWrite(redPin, HIGH);
+  digitalWrite(greenPin, HIGH);
+  ledMode = 2;
+}
+
+void greenLed()
+{
+  digitalWrite(redPin, LOW);
+  digitalWrite(greenPin, HIGH);
+  ledMode = 3;
+}
+
+void offLed()
+{
+  digitalWrite(redPin,LOW);
+  digitalWrite(greenPin, LOW);
+  ledMode = 0;
 }
