@@ -17,6 +17,8 @@ const int buttonPin = 8;
 
 //--Global variables
 int buttonState = 0;
+long previousMillis = 0;  //previous value of the millis function
+long sendInterval = 10;   //interval of ttn transmission, in seconds
 
 DHT dht(DHTPIN, DHTTYPE);
 TheThingsNetwork ttn(loraSerial, debugSerial, freqPlan);
@@ -52,12 +54,17 @@ void loop()
   //-- true: Farenheit
   uint16_t temperature = (dht.readTemperature(false)) * 100;
 
-  //--generate payload and send it
-  sendPayload(temperature, humidity, buttonState);
+  //interval past? send payload.
+  unsigned long currentMillis = millis();
+  if(currentMillis - previousMillis > sendInterval *1000)
+  {
+    previousMillis = currentMillis;
+    sendPayload(temperature, humidity, buttonState);    //--generate and send payload
+  }
+
   //--Print values to serial monitor, only for debugging
   //debugPrint(temperature, humidity, buttonState);
 
-  delay(10000);
 }
 
 void sendPayload(int temp, uint16_t hum, int button)
