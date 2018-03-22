@@ -14,6 +14,7 @@ const char *appSKey = "F2F66085A51D09A5A86E74A9AF9B8D68";
 
 //--Pin defines
 const int buttonPin = 8;
+const int NTCpin = A0;
 
 //--Global variables
 int buttonState = 0;
@@ -38,6 +39,7 @@ void setup()
 
   //--PinMode setup
   pinMode(buttonPin, INPUT);
+  pinMode(NTCpin, INPUT);
 }
 
 void loop()
@@ -54,12 +56,14 @@ void loop()
   //-- true: Farenheit
   uint16_t temperature = (dht.readTemperature(false)) * 100;
 
+  uint16_t NTC = Thermistor(analogRead(NTCpin));
+
   //interval past? send payload.
   unsigned long currentMillis = millis();
   if(currentMillis - previousMillis > sendInterval *1000)
   {
     previousMillis = currentMillis;
-    sendPayload(temperature, humidity, buttonState);    //--generate and send payload
+    sendPayload(temperature, humidity, buttonState, NTC);    //--generate and send payload
   }
 
   //--Print values to serial monitor, only for debugging
@@ -67,14 +71,16 @@ void loop()
 
 }
 
-void sendPayload(int temp, uint16_t hum, int button)
+void sendPayload(uint16_t temp, uint16_t hum, int button, uint16_t NTC)
 {
-  byte payload[5];
-  payload[0] = highByte(temp);
+    byte payload[7];
+    payload[0] = highByte(temp);
     payload[1] = lowByte(temp);
     payload[2] = highByte(hum);
     payload[3] = lowByte(hum);
     payload[4] = lowByte(button);
+    payload[5] = lowByte(NTC);
+    payload[6] = highByte(NTC);
 
     ttn.sendBytes(payload, sizeof(payload));
 }
@@ -90,7 +96,7 @@ void debugSetup()
 }
 
 //--Print the temperature humidity and button state to the serial monitor
-void debugPrint(uint16_t temperature, uint16_t humidity, int buttonState)
+void debugPrint(uint16_t temperature, uint16_t humidity, int buttonState, uint16_t NTC)
 {
   debugSerial.print("Temperature: ");
     debugSerial.println(temperature);
@@ -98,4 +104,15 @@ void debugPrint(uint16_t temperature, uint16_t humidity, int buttonState)
     debugSerial.println(humidity);
     debugSerial.print("ButtonState: ");
     debugSerial.println(buttonState);
+    debugSerial.print("NTC: ");
+    debugSerial.println(NTC);
+}
+
+double Thermistor(int RawADC) {
+  double Temp;
+  Temp = log(10000.0*((1024.0/RawADC-1))); 
+  Temp = 1 / (0.001129148 + (0.000234125 + (0.0000000876741 * Temp * Temp ))* Temp );
+  Temp = Temp - 275.15;            // Convert Kelvin to Celcius
+   //Temp = (Temp * 9.0)/ 5.0 + 32.0; // Convert Celcius to Fahrenheit
+   return Temp *100;
 }
