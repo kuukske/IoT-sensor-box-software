@@ -74,7 +74,7 @@ void loop()
   NOTE: The DHT11 sensor that we are using doesn't allow decimal values.
   */
   uint16_t humidity = dht.readHumidity(false) * 100;      //Get humidity measurement
-  uint16_t temperature = dht.readTemperature(false) *100;    //Get temperature measurement, false = Celcius
+  uint16_t temperature = dht.readHumidity(false) *100;    //Get temperature measurement, false = Celcius
   uint16_t NTCtemperature = thermistor(analogRead(NTCpin)); //Get analogue temperature reading from NTC pin
 
   currentMillis = millis();     //Get the current millis from the millis function
@@ -82,22 +82,20 @@ void loop()
   if(currentMillis - previousMillis > sendInterval * 1000)   //If the difference between current and previous millis > sendInterval:
   {
     previousMillis = currentMillis;   //Make previousMillis currentMillis
+    sendPayload(temperature, humidity, buttaonState, NTCtemperature, ledMode, shockState);  //Send complete payload
 
-    if(ledSecondCount >= 2)   //If ledSecondCount >= 1 (so 2x sendInterval)   
+    buttonState = 0;    //Reset buttonState to 0
+    shockState = 0;     //Reset shockState to 0
+
+    if(ledSecondCount >= 1)     //If ledSecondCount >= 1 (so 2x sendInterval)   
     {
       ledSecondCount = 0;     //Reset ledSecondCount to 0
-      ledMode++;              //Increment ledMode for next simulation
-      if(ledMode >= 4)        //If 3 led modes are done, start over
-      ledMode = 1;
       trafficLightSim(ledMode); //Run traficLightSimulation
+      ledMode++;          //Increment ledMode for next simulation
+      if(ledMode >= 4)      //If 3 led modes are done, start over
+        ledMode = 1;
     }
 
-    sendPayload(temperature, humidity, buttonState, NTCtemperature, ledMode, shockState);  //Send complete payload
-
-    //debugPrint(temperature, humidity, buttonState, NTCtemperature, shockState,ledMode);     //Print the sensor values for debugging 
-
-    buttonState = 0;        //Reset buttonState to 0
-    shockState = 0;         //Reset shockState to 0
     ledSecondCount++;       //Increment ledSecondCount for next sendInterval
   }
 
@@ -113,31 +111,18 @@ void debugSetup()               //Waits for the debugSerial to be ready and prin
 /*
 Print the current values of temperature, humidity, buttton state, NTC and shock sensor in the serial monitor.
 */
-void debugPrint(uint16_t temperature, uint16_t humidity, int buttonState, uint16_t NTC, int shock, int led)
+void debugPrint(uint16_t temperature, uint16_t humidity, int buttonState, uint16_t NTC, int shock)
 {
-  for(int i=0;i<50;i++)
-  {
-    debugSerial.print("-");
-  }
-  debugSerial.println();
   debugSerial.print("Temperature: ");
-  debugSerial.println(temperature/100.0);
-  debugSerial.print("Humidity: ");
-  debugSerial.println(humidity/100.0);
-  debugSerial.print("ButtonState: ");
-  debugSerial.println(buttonState);
-  debugSerial.print("NTC: ");
-  debugSerial.println(NTC/100.0);
-  debugSerial.print("Shock: ");
-  debugSerial.println(shock);
-  debugSerial.print("LED mode: ");
-  debugSerial.println(led);
-
-  for(int i=0;i<50;i++)
-  {
-    debugSerial.print("-");
-  }
-  debugSerial.println();
+    debugSerial.println(temperature);
+    debugSerial.print("Humidity: ");
+    debugSerial.println(humidity);
+    debugSerial.print("ButtonState: ");
+    debugSerial.println(buttonState);
+    debugSerial.print("NTC: ");
+    debugSerial.println(NTC);
+    debugSerial.print("Shock: ");
+    debugSerial.println(shock);
 }
 
 /*
