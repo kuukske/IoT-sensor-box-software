@@ -47,6 +47,7 @@ void setup()
 
   //--TTN communicaiton setup
   ttn.personalize(devAddr, nwkSKey, appSKey);   //Add all required TTN keys and information
+  chan0Only();
   ttn.showStatus();               //Print status of TTN network conneciton
   dht.begin();                  //Begin the DHT humidity/temperature sensor
 
@@ -74,7 +75,7 @@ void loop()
   NOTE: The DHT11 sensor that we are using doesn't allow decimal values.
   */
   uint16_t humidity = dht.readHumidity(false) * 100;      //Get humidity measurement
-  uint16_t temperature = dht.readHumidity(false) *100;    //Get temperature measurement, false = Celcius
+  uint16_t temperature = dht.readTemperature(false) *100;    //Get temperature measurement, false = Celcius
   uint16_t NTCtemperature = thermistor(analogRead(NTCpin)); //Get analogue temperature reading from NTC pin
 
   currentMillis = millis();     //Get the current millis from the millis function
@@ -82,7 +83,7 @@ void loop()
   if(currentMillis - previousMillis > sendInterval * 1000)   //If the difference between current and previous millis > sendInterval:
   {
     previousMillis = currentMillis;   //Make previousMillis currentMillis
-    sendPayload(temperature, humidity, buttaonState, NTCtemperature, ledMode, shockState);  //Send complete payload
+    sendPayload(temperature, humidity, buttonState, NTCtemperature, ledMode, shockState);  //Send complete payload
 
     buttonState = 0;    //Reset buttonState to 0
     shockState = 0;     //Reset shockState to 0
@@ -182,6 +183,44 @@ void sendPayload(uint16_t temp, uint16_t hum, int button, uint16_t NTC, int ledM
     payload[8] = lowByte(shock);  //Send the value of the shock sensors
 
     ttn.sendBytes(payload, sizeof(payload));  //Send the complete payload
+}
+
+
+//Only transmit on channel 0 !TEST AND DEBUG ONLY! 
+void chan0Only()
+{
+  loraSerial.println("mac reset 868");
+  delay(100);
+  loraSerial.println("mac set ch status 0 off");
+  delay(100);
+  loraSerial.println("mac set ch status 1 off");
+  delay(100);
+  loraSerial.println("mac set ch status 2 off");
+  delay(100);
+  loraSerial.println("mac set ch freq 5 868100000");
+  delay(100);
+  loraSerial.println("mac set ch dcycle 5 9");
+  delay(100);
+  loraSerial.println("mac set ch drrange 5 0 5");
+  delay(100);
+  loraSerial.println("mac set ch status 5 on");
+  delay(100);
+  loraSerial.println("mac set devaddr 26011834");
+  delay(100);
+  loraSerial.println("mac set nwkskey 68812A2DF5C6E54EF18E197B5136C9DB");
+  delay(100);
+  loraSerial.println("mac set appskey F2F66085A51D09A5A86E74A9AF9B8D68");
+  delay(100);
+  loraSerial.println("mac set adr off");
+  delay(100);
+  loraSerial.println("mac set ar off");
+  delay(100);
+  loraSerial.println("mac set pwridx 1");
+  delay(100);
+  loraSerial.println("mac set dr 5");
+  delay(100);
+  loraSerial.println("mac join abp");
+  delay(100);
 }
 
 /*

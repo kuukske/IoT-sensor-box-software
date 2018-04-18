@@ -43,7 +43,7 @@ void setup()
   //--Serial setup
   loraSerial.begin(57600);  //Serial communication with LORA module begin 
   debugSerial.begin(9600);  //Serial communication for debugging begin
-  debugSetup();       //Serial communicaiton for debugging setup
+  debugSetup();             //Serial communicaiton for debugging setup
 
   //--TTN communicaiton setup
   ttn.personalize(devAddr, nwkSKey, appSKey);   //Add all required TTN keys and information
