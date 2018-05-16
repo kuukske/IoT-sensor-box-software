@@ -1,0 +1,4 @@
+([('GUI',
+   '/Volumes/OSX/Users/bram_kuijk/Documents/School/Fontys/Minor/Be '
+   'creative/Software/GUI/dist/GUI',
+   'EXECUTABLE')],)
